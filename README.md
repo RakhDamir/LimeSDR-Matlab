@@ -19,13 +19,14 @@ Steps for the successfull installation:
 2. Check that the LimeSuite 19.04 is installed (you need LimeSuite.dll file)
 3. Run from Matlab `limeSDR.build_thunk();`
 4. Connect LimeSDR-USB
-5. Run one of examples
+5. Update Firmware `limeutil --update`
+6. Run one of the examples
 
 ### System configuration
 Original system configuration:
 1. Windows 10 Pro
 2. Visual Studio Professional 2015 (compiler)
-3. Matlab 2018a
+3. Matlab 2018b
 4. LimeSDR-USB
 
 ### Known issues
