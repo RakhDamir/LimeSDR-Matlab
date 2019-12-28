@@ -12,7 +12,7 @@ addpath('../_library') % add path with LimeSuite library
 
 % Initialize parameters
 TotalTime   = 12;       % Time of observation, s
-Fc          = 1003e6;   % Carrier Frequency, Hz
+Fc          = 900e6;    % Carrier Frequency, Hz
 Fs          = 1e6;      % Frequency of sampling frequency, Hz
 Ts          = 4e0;      % Signal duration, s
 Fsig        = 0.5e0;    % Frequency of desired signal, Hz
