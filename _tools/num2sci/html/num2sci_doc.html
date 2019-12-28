@@ -1,0 +1,201 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>NUM2SIP and NUM2BIP Examples</title><meta name="generator" content="MATLAB 7.11"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-05-13"><meta name="DC.source" content="num2sci_doc.m"><style type="text/css">
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head><body><div class="content"><h1>NUM2SIP and NUM2BIP Examples</h1><!--introduction--><p>The function <a href="https://www.mathworks.com/matlabcentral/fileexchange/33174"><tt>NUM2SIP</tt></a> converts a numeric scalar to a string containing the number value with a <a href="https://en.wikipedia.org/wiki/Metric_prefix">metric prefix</a>, for example 1000 -&gt; '1 k'. Optional arguments control the number of digits, select the symbol or full prefix name, and trailing zeros: this document shows examples of how to use these features.</p><p>The development of <tt>NUM2SIP</tt> was motivated by the lack of any well- written function that provides this conversion: many of the functions available on FEX  do not conform to the SI standard, or use buggy conversion algorithms, or are simply painfully slow. <tt>NUM2SIP</tt> has been tested against a large set of test cases, including many edge-cases and all of the optional arguments.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Basic Usage</a></li><li><a href="#2">Optional Input: Significant Figures</a></li><li><a href="#3">Optional Input: Symbol or Full Prefix</a></li><li><a href="#4">Optional Input: Fixed Prefix</a></li><li><a href="#5">Optional Input: Trailing Zeros</a></li><li><a href="#6">Space Character</a></li><li><a href="#7">Larger/Smaller Values without a Prefix</a></li><li><a href="#8"><tt>NUM2BIP</tt> (Binary Prefix)</a></li><li><a href="#9">Reverse Conversion: String to Numeric</a></li></ul></div><h2>Basic Usage<a name="1"></a></h2><p>In many cases <tt>NUM2SIP</tt> can be called with just a numeric value:</p><pre class="codeinput">num2sip(1000)
+num2sip(1.2e-3)
+num2sip(456e+7)
+</pre><pre class="codeoutput">ans =
+1 k
+ans =
+1.2 m
+ans =
+4.56 G
+</pre><h2>Optional Input: Significant Figures<a name="2"></a></h2><p><tt>NUM2SIP</tt> returns five significant figures by default. The second input argument specifies the number of significant figures. Note that <tt>NUM2SIP</tt> correctly rounds upwards to the next prefix:</p><pre class="codeinput">num2sip(987000,3)
+num2sip(987000,2)
+num2sip(987000,1)
+</pre><pre class="codeoutput">ans =
+987 k
+ans =
+990 k
+ans =
+1 M
+</pre><h2>Optional Input: Symbol or Full Prefix<a name="3"></a></h2><p><tt>NUM2SIP</tt> returns the prefix symbol by default, the third input argument selects between the symbol and the full prefix name. Note that <tt>u</tt> is used instead of the <img src="num2sci_doc_eq68803.png" alt="$\mu$"> character, to simplify the file encoding.</p><pre class="codeinput">num2sip(1e6,[],false) <span class="comment">% default</span>
+num2sip(1e6,[],true)
+</pre><pre class="codeoutput">ans =
+1 M
+ans =
+1 mega
+</pre><h2>Optional Input: Fixed Prefix<a name="4"></a></h2><p><tt>NUM2SIP</tt> allow the prefix to be selected by the user, and all outputs will be given as coefficients of the selected prefix:</p><pre class="codeinput">num2sip(10^2,[],<span class="string">'k'</span>)
+num2sip(10^4,[],<span class="string">'k'</span>)
+num2sip(10^6,[],<span class="string">'k'</span>)
+</pre><pre class="codeoutput">ans =
+0.1 k
+ans =
+10 k
+ans =
+1000 k
+</pre><h2>Optional Input: Trailing Zeros<a name="5"></a></h2><p><tt>NUM2SIP</tt> removes trailing zeros by default, the fourth input argument selects between removing and keeping any trailing zeros:</p><pre class="codeinput">num2sip(1000,3,[],false) <span class="comment">% default</span>
+num2sip(1000,3,[],true)
+</pre><pre class="codeoutput">ans =
+1 k
+ans =
+1.00 k
+</pre><h2>Space Character<a name="6"></a></h2><p>The standard for the International System of Quantities (ISQ) <a href="https://en.wikipedia.org/wiki/International_System_of_Quantities">ISO/IEC 80000</a> (previously ISO 31) specifies that <a href="https://www.electropedia.org/iev/iev.nsf/display?openform&amp;ievref=112-01-17"><i>"there is a space between the numerical value and the unit symbol"</i></a>. Note that this applies even when there is no SI prefix, just the unit. <tt>NUM2SIP</tt> correctly includes the space character in all cases:</p><pre class="codeinput">[num2sip(1e-3),<span class="string">'V'</span>]
+[num2sip(1e+0),<span class="string">'V'</span>]
+[num2sip(1e+3),<span class="string">'V'</span>]
+</pre><pre class="codeoutput">ans =
+1 mV
+ans =
+1 V
+ans =
+1 kV
+</pre><h2>Larger/Smaller Values without a Prefix<a name="7"></a></h2><p>If the magnitude of the input value is outside the prefix range, then no prefix is used and the string value is returned in exponential notation:</p><pre class="codeinput">num2sip(1e-99)
+num2sip(1e+85)
+</pre><pre class="codeoutput">ans =
+1e-099 
+ans =
+1e+085 
+</pre><h2><tt>NUM2BIP</tt> (Binary Prefix)<a name="8"></a></h2><p>The submission includes the bonus function <tt>NUM2BIP</tt>: this also converts a numeric scalar to a prefixed string, but uses the ISO 80000 defined <a href="https://en.wikipedia.org/wiki/Binary_prefix">binary prefixes</a> instead of metric prefixes. Binary prefixes are mostly used for computer memory.</p><p>The function <tt>NUM2BIP</tt> has exactly the same arguments as <tt>NUM2SIP</tt>:</p><pre class="codeinput">num2bip(1024)
+num2bip(1025,5,true,true)
+</pre><pre class="codeoutput">ans =
+1 Ki
+ans =
+1.0010 kibi
+</pre><h2>Reverse Conversion: String to Numeric<a name="9"></a></h2><p>The functions <a href="https://www.mathworks.com/matlabcentral/fileexchange/53886"><tt>SIP2NUM</tt> and <tt>BIP2NUM</tt></a> convert from metric prefixed and binary prefixed strings into numerics.</p><p class="footer"><br>
+      Published with MATLAB&reg; 7.11<br></p></div><!--
+##### SOURCE BEGIN #####
+%% NUM2SIP and NUM2BIP Examples
+% The function <https://www.mathworks.com/matlabcentral/fileexchange/33174
+% |NUM2SIP|> converts a numeric scalar to a string containing the number
+% value with a <https://en.wikipedia.org/wiki/Metric_prefix metric prefix>,
+% for example 1000 -> '1 k'. Optional arguments control the number of
+% digits, select the symbol or full prefix name, and trailing zeros: this
+% document shows examples of how to use these features.
+%
+% The development of |NUM2SIP| was motivated by the lack of any well-
+% written function that provides this conversion: many of the functions
+% available on FEX  do not conform to the SI standard, or use buggy
+% conversion algorithms, or are simply painfully slow. |NUM2SIP| has been
+% tested against a large set of test cases, including many edge-cases
+% and all of the optional arguments.
+%% Basic Usage
+% In many cases |NUM2SIP| can be called with just a numeric value:
+num2sip(1000)
+num2sip(1.2e-3)
+num2sip(456e+7)
+%% Optional Input: Significant Figures
+% |NUM2SIP| returns five significant figures by default. The second input
+% argument specifies the number of significant figures. Note that |NUM2SIP|
+% correctly rounds upwards to the next prefix:
+num2sip(987000,3)
+num2sip(987000,2)
+num2sip(987000,1)
+%% Optional Input: Symbol or Full Prefix
+% |NUM2SIP| returns the prefix symbol by default, the third input argument
+% selects between the symbol and the full prefix name. Note that |u| is
+% used instead of the $\mu$ character, to simplify the file encoding.
+num2sip(1e6,[],false) % default
+num2sip(1e6,[],true)
+%% Optional Input: Fixed Prefix
+% |NUM2SIP| allow the prefix to be selected by the user, and all outputs
+% will be given as coefficients of the selected prefix:
+num2sip(10^2,[],'k')
+num2sip(10^4,[],'k')
+num2sip(10^6,[],'k')
+%% Optional Input: Trailing Zeros
+% |NUM2SIP| removes trailing zeros by default, the fourth input argument
+% selects between removing and keeping any trailing zeros:
+num2sip(1000,3,[],false) % default
+num2sip(1000,3,[],true)
+%% Space Character
+% The standard for the International System of Quantities (ISQ)
+% <https://en.wikipedia.org/wiki/International_System_of_Quantities
+% ISO/IEC 80000> (previously ISO 31) specifies that
+% <https://www.electropedia.org/iev/iev.nsf/display?openform&ievref=112-01-17
+% _"there is a space between the numerical value and the unit symbol"_>.
+% Note that this applies even when there is no SI prefix, just the unit.
+% |NUM2SIP| correctly includes the space character in all cases:
+[num2sip(1e-3),'V']
+[num2sip(1e+0),'V']
+[num2sip(1e+3),'V']
+%% Larger/Smaller Values without a Prefix
+% If the magnitude of the input value is outside the prefix range, then no
+% prefix is used and the string value is returned in exponential notation:
+num2sip(1e-99)
+num2sip(1e+85)
+%% |NUM2BIP| (Binary Prefix)
+% The submission includes the bonus function |NUM2BIP|: this also converts
+% a numeric scalar to a prefixed string, but uses the ISO 80000 defined
+% <https://en.wikipedia.org/wiki/Binary_prefix binary prefixes> instead of
+% metric prefixes. Binary prefixes are mostly used for computer memory.
+%
+% The function |NUM2BIP| has exactly the same arguments as |NUM2SIP|:
+num2bip(1024)
+num2bip(1025,5,true,true)
+%% Reverse Conversion: String to Numeric
+% The functions <https://www.mathworks.com/matlabcentral/fileexchange/53886
+% |SIP2NUM| and |BIP2NUM|> convert from metric prefixed and binary prefixed
+% strings into numerics.
+##### SOURCE END #####
+--></body></html>

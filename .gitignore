@@ -21,3 +21,8 @@ Thumbs.db
 *.obj
 *.exp
 *.lib
+
+
+_results/checkRxPhaseAlign.mat
+*.mat
+*.fig
