@@ -149,7 +149,7 @@ classdef limeSDR_XCVR < handle
             
             stream.isTx                 = obj.isTx;
             stream.channel              = obj.chan;
-            stream.fifoSize             = 1024*1024*16;
+            stream.fifoSize             = 1024*1024*21;
             stream.throughputVsLatency  = 1.0;
             % stream.dataFmt              = 0; % for new release of the library
             %   LMS_FMT_F32 	32-bit floating point
