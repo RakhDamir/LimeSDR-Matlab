@@ -7,6 +7,13 @@ You can find basic examples for the usage of the library in the folder "_example
 Code is updated to support the current version of LimeSuit(19.04).
 Before starting, run `help limeSDR.build_thunk` to view instructions on how to have MATLAB build a Thunk file to use in conjunction with libLimeSuite.
 
+#### Repository structure
+***_library***      - folder with wrapper files
+***_examples***     - folder that contains basic how to use Matlab with LimeSDR for transmission and reception. Also there is an example for simulateneous transmission and reception.
+***_testbenches***  - folder with scripts that check performance of LimeSDR such as average channel alignment, coherence and etc.
+***_tools*** - additional code components and user defined functions that are required for main scripts.
+***_results***      - folder with simulation results
+
 ### Prerequisites
 1. Matlab
 2. LimeSuite 19.04
