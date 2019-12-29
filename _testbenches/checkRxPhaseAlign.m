@@ -16,26 +16,27 @@ addpath('../_results')          % add path to folder with results
 
 fprintf('====================== Script for evaluation of phase coherence between RX channels ====================== \n');
 fprintf('%s - Current folder: "%s"\n',currTimeLine(),pwd);
-filefolder_script    = pwd; % to get path to current folder on the cluster
-filefolder_result    = sprintf('%s/../_results', filefolder_script);
-savebool = true; % save results
+filefolder_script  	= pwd; % to get path to current folder on the cluster
+filefolder_result  	= sprintf('%s/../_results', filefolder_script);
+savebool           	= true; % save results
 plotbool = true; % plot figures
 
 
 % Initialize parameters
-TotalTime   = 20e0;     % Time of observation for one experiment, s
-Fc          = 900e6;    % Carrier Frequency, Hz5
-Fs          = 1e6;      % Frequency of sampling frequency, Hz
-Ts          = 0.5e0;      % Signal duration, s
-Fdev        = 0.5e6;    % Frequency of deviation, Hz
-Fi          = 0.0e6;    % Intermediate frequency, Hz
-Asig        = 1;        % Amplitude of signal, [-1,1]
-BW          = 5e6;      % Bandwidth of the signal, Hz (5-40MHz and 50-130Mhz)
-RxGain      = 30;       % Receiver Gain, dB
-TxGain      = 40;       % Transmitter Gain, dB
-Nstat       = 10;        % number of experiments
+TotalTime           = 4e0;     % Time of observation for one experiment, s
+Fc                  = 900e6;    % Carrier Frequency, Hz5
+Fs                  = 1e6;      % Frequency of sampling frequency, Hz
+Ts                  = 0.5e0;    % Signal duration, s
+Fdev                = 0.5e6;    % Frequency of deviation, Hz
+Fi                  = 0.0e6;    % Intermediate frequency, Hz
+Asig                = 1;        % Amplitude of signal, [-1,1]
+BW                  = 5e6;      % Bandwidth of the signal, Hz (5-40MHz and 50-130Mhz)
+RxGain              = 30;       % Receiver Gain, dB
+TxGain              = 40;       % Transmitter Gain, dB
+Nstat               = 10;       % number of experiments
 
-phase_FD_stat = zeros(Fs*Ts, Nstat);
+phase_FD_stat       = zeros(Fs*Ts, Nstat);
+sample_offset_all   = zeros(Nstat, 1);
 
 for idxLoopStat = 1:Nstat
     fprintf('%s============================= Iteration #%d/%d ========================== \n',currTimeLine(),idxLoopStat,Nstat);
@@ -119,8 +120,9 @@ for idxLoopStat = 1:Nstat
     indRx0          = 1;  % index of the last received sample
     indRx1          = 1;
     TimeOut_ms      = 5000;
-    TimeStamp_smpl  = round(1*Fs); % Initial value for the TimeStamp
-        
+    Nskip          	= round(1*Fs_dev_rx); 
+    TimeStamp_smpl  = Nskip; % Initial value for the TimeStamp
+   
     for idxLoopRF   = 1:round(TotalTime/Ts)+1 % extra iteration to read all samples
         
         tic;
@@ -186,21 +188,27 @@ for idxLoopStat = 1:Nstat
     % (10) Cleanup and shutdown by stopping the RX stream and having MATLAB delete the handle object.
     dev.stop(); clear dev; fprintf('%s - LimeSDR Stopped\n', currTimeLine());
     
-    % (11) calculate phase error between channels
+    % (11) Process samples
+    % calculate phase error between channels
     Nsampltotal     = Nsampl*round(TotalTime/Ts);
-    waveform_full 	= reshape(repmat(waveform.', 1,round(TotalTime/Ts)),[],1);
-    Nskip          	= round(1*Fs_dev_rx); %
-    phase_orig      = unwrap(angle(waveform_full(1:Nsampltotal)));
+    %waveform_full 	= reshape(repmat(waveform.', 1,round(TotalTime/Ts)),[],1);
+    %phase_orig      = unwrap(angle(waveform_full(1:Nsampltotal)));
     phase_rx0       = unwrap(angle(bufferRx0(1+Nskip:Nsampltotal+Nskip)));
     phase_rx1       = unwrap(angle(bufferRx1(1+Nskip:Nsampltotal+Nskip)));
     phase_diff     	= phase_rx0 - phase_rx1;
     phase_diff_mtx  = reshape(phase_diff, Nsampl, round(TotalTime/Ts));
     phase_diff_mtx  = unwrap(phase_diff_mtx,[],1);
     phase_diff_mtx  = phase_diff_mtx - phase_diff_mtx(FreqZind,:);
-    %phase_FD        = unwrap(rem(mean(phase_diff_mtx,2),2*pi)); % phase difference between channels for different frequencies
-    phase_FD        = mean(phase_diff_mtx,2); % phase difference between channels for different frequencies
-    phase_FD_stat(:,idxLoopStat) = phase_FD;             % collect phases for different runs
+    % phase_FD        = unwrap(rem(mean(phase_diff_mtx,2),2*pi)); % phase difference between channels for different frequencies
+    phase_FD        = mean(phase_diff_mtx,2);   % phase difference between channels for different frequencies
+    phase_FD_stat(:,idxLoopStat) = phase_FD;   	% collect phases for different runs
     
+    % calculate time offset between channels
+    phase_FD_diff                   = diff(phase_FD);       % differentiate phase 
+    sample_offset_all(idxLoopStat)	= -mean(phase_FD_diff(Ts/20*Fs:end-Ts/20*Fs,:),1)/(2*pi*Fdev)*(Ts/2*Fs_dev_rx*1*Fs_dev_rx);	% calculate time offset between channels
+    % Time shift in TD will be linear phase in FD
+    % x(t - 1/Fs*k) >> exp(-1i*2pi*Fdev/(T/2*Fs)*n*1/Fs*k)
+    % n = 1 because we calculate phase difference between adjacent frequencies
 end
 
 
@@ -273,23 +281,43 @@ if plotbool
     xlabel('Frequencies, Hz', 'FontSize',18)
     ylabel('Phase, deg', 'FontSize',18)
     zlabel('Count', 'FontSize',18)
+    title('Phase difference vs Frequency', 'Fontsize', 22)
     colormap jet
     h = colorbar; ylabel(h,'10 log_{10}(Count)', 'FontSize',16)
     fprintf('%s - Visualisation of Histogram:     %7.4fs\n', currTimeLine(), toc);
+    
+    % Histograms of sample offset for different frequencies
+    tic
+    fig(5)  = figure(5);
+    histogram(sample_offset_all,[-1:1/16:1]+1/32);
+    xlabel('Sample offset, T_o/T_s', 'FontSize',18)
+    ylabel('Count', 'FontSize',18)
+    title('Histogram of Samples Offset', 'Fontsize', 22)
+    fprintf('%s - Visualisation of Offsets:       %7.4fs\n', currTimeLine(), toc);
     
 end
 
 
 % (14) Save Plots 
 if plotbool && savebool
+ 
     % Save 2D histogram
     filename_image = sprintf('%s/checkRxPhaseAlign_%s_hist_Fc=%s,Fs=%s,Fdev=%s,T=%d,Nstat=%d', filefolder_result, timestring, num2sip(Fc_dev_rx,3), num2sip(Fs_dev_rx,3), num2sip(Fdev,3), TotalTime, Nstat);
-    set(gcf,'PaperUnits','inches','PaperPosition',[0 0 7 4])
+    set(fig(4),'PaperUnits','inches','PaperPosition',[0 0 7 4])
     %png
     print(filename_image,'-dpng','-r600' )
     %eps
-    saveas(gcf,filename_image,'epsc')
+    saveas(fig(4),filename_image,'epsc')
     fprintf('%s - Plot saved to:    "%s"\n', currTimeLine(), filefolder_result)
+
+    % Save histograms of sample offset
+    filename_image = sprintf('%s/checkRxPhaseAlign_%s_offset_Fc=%s,Fs=%s,Fdev=%s,T=%d,Nstat=%d', filefolder_result, timestring, num2sip(Fc_dev_rx,3), num2sip(Fs_dev_rx,3), num2sip(Fdev,3), TotalTime, Nstat);
+    set(fig(5),'PaperUnits','inches','PaperPosition',[0 0 7 4])
+    %png
+    print(filename_image,'-dpng','-r600' )
+    %eps
+    saveas(fig(5),filename_image,'epsc')
+    fprintf('%s - Plot saved to:    "%s"\n', currTimeLine(), filefolder_result)    
     
     % Save all Figures
     filename_fig = sprintf('%s/checkRxPhaseAlign_%s_Fc=%s,Fs=%s,Fdev=%s,T=%d,Nstat=%d.fig', filefolder_result, timestring, num2sip(Fc_dev_rx,3), num2sip(Fs_dev_rx,3), num2sip(Fdev,3), TotalTime, Nstat);
