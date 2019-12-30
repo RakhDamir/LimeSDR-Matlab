@@ -33,7 +33,7 @@ Asig                = 1;        % Amplitude of signal, [-1,1]
 BW                  = 5e6;      % Bandwidth of the signal, Hz (5-40MHz and 50-130Mhz)
 RxGain              = 30;       % Receiver Gain, dB
 TxGain              = 40;       % Transmitter Gain, dB
-Nstat               = 500;      % number of expe  riments
+Nstat               = 100;      % number of expe  riments
 
 phase_FD_stat       = zeros(Fs*Ts, Nstat);
 sample_offset       = zeros(Nstat, 1);
@@ -192,7 +192,6 @@ for idxLoopStat = 1:Nstat
     phase_rx1       = unwrap(angle(bufferRx1(1+Nskip:Nsampltotal+Nskip)));
     phase_diff     	= phase_rx0 - phase_rx1;
     phase_diff_mtx  = reshape(phase_diff, Nsampl, round(TotalTime/Ts));
-    phase_FD_ten(1:Nsampl,:,idxLoopStat) = phase_diff_mtx;
     % evaluate phase depencence on frequency
     phase_diff_mtx  = unwrap(phase_diff_mtx,[],1);
     phase_diff_mtx  = phase_diff_mtx - mean(phase_diff_mtx(FreqZind-1000:FreqZind+1000,:),1);
@@ -265,9 +264,9 @@ if plotbool
         plot(phase_rx1(1:100:end))
         hold off
     subplot(3,1,2)
-        plot(radtodeg(rem(phase_diff(1:100:end), 2*pi)))
+        plot(rad2deg(rem(phase_diff(1:100:end), 2*pi)))
     subplot(3,1,3)
-        plot(freqs, radtodeg(phase_FD_stat(:,end)));
+        plot(freqs, rad2deg(phase_FD_stat(:,end)));
     fprintf('%s - Visualisation of Phase Rx0-Rx1: %7.4fs\n', currTimeLine(), toc);
 
     
@@ -275,7 +274,7 @@ if plotbool
     tic
     fig(4)  = figure(4);
     bins   	= (-200+0.1:0.1:200)-0.1/2; % resolution of phase in histogram
-    count  	= hist(radtodeg(phase_FD_stat_small.'), bins); % compute histograms
+    count  	= hist(rad2deg(phase_FD_stat_small.'), bins); % compute histograms
     b      	= bar3(bins, count); % plot as three-dimensional bar plot
     count   = 10*log10(count); % log scale of Z axis
     count(count==-Inf) = 0;
@@ -303,7 +302,7 @@ if plotbool
     % Histograms of sample offset for different frequencies
     tic
     fig(5)  = figure(5);
-    H = histogram(sample_offset,[-1:1/128:1]+1/128*1/2);
+    H = histogram(sample_offset,(-1:1/128:1)+1/128*1/2);
     H = histogram('BinEdges',H.BinEdges,'BinCounts',movsum(H.Values,4));
     xlabel('Sample offset, T_o/T_s', 'FontSize',18)
     ylabel('Count', 'FontSize',18)
@@ -330,7 +329,7 @@ if plotbool
     tic
     fig(6)  = figure(6);
     bins   	= (-2+0.04:0.04:2)-0.04/2; % resolution of phase in histogram
-    count  	= hist(radtodeg(wrapToPi(unwrap(phase_drift_mtx,[],1))), bins); % compute histograms
+    count  	= hist(rad2deg(wrapToPi(unwrap(phase_drift_mtx,[],1))), bins); % compute histograms
     b      	= bar3(bins, count); % plot as three-dimensional bar plot
     count   = 10*log10(count); % log scale of Z axis
     count(count==-Inf) = 0;
@@ -341,12 +340,12 @@ if plotbool
     zlabel('Count', 'FontSize',18)
     title('Phase drift vs Time', 'Fontsize', 22)
     colormap jet
-    h = colorbar; ylabel(h,'Count', 'FontSize',16)
-    %h = colorbar; ylabel(h,'10 log_{10}(Count)', 'FontSize',16)
+    %h = colorbar; ylabel(h,'Count', 'FontSize',16)
+    h = colorbar; ylabel(h,'10 log_{10}(Count)', 'FontSize',16)
     fprintf('%s - Visualisation of Histogram:     %7.4fs\n', currTimeLine(), toc);
     if plotbool && savebool
         % Save 2D histogram
-        filename_image = sprintf('%s/checkRxPhaseAlign_%s_hist_Fc=%s,Fs=%s,Fdev=%s,T=%d,Nstat=%d', filefolder_result, timestring, num2sip(Fc_dev_rx,3), num2sip(Fs_dev_rx,3), num2sip(Fdev,3), TotalTime, Nstat);
+        filename_image = sprintf('%s/checkRxPhaseAlign_%s_drift_Fc=%s,Fs=%s,Fdev=%s,T=%d,Nstat=%d', filefolder_result, timestring, num2sip(Fc_dev_rx,3), num2sip(Fs_dev_rx,3), num2sip(Fdev,3), TotalTime, Nstat);
         set(fig(6),'PaperUnits','inches','PaperPosition',[0 0 12 6])
         %png
         print(filename_image,'-dpng','-r600' )
