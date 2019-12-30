@@ -9,9 +9,13 @@ Before starting, run `help limeSDR.build_thunk` to view instructions on how to h
 
 #### Repository structure
 ***_library***      - folder with wrapper files
+
 ***_examples***     - folder that contains basic how to use Matlab with LimeSDR for transmission and reception. Also there is an example for simulateneous transmission and reception.
+
 ***_testbenches***  - folder with scripts that check performance of LimeSDR such as average channel alignment, coherence and etc.
+
 ***_tools*** - additional code components and user defined functions that are required for main scripts.
+
 ***_results***      - folder with simulation results
 
 ### Prerequisites
